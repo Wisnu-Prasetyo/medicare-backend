@@ -54,17 +54,57 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ where: { email } });
-    if (!user || !user.isActive) {
-      return res.status(401).json({ message: 'Email atau password salah' });
+
+    console.log("\n========== LOGIN ==========");
+    console.log("Email :", email);
+
+    const user = await User.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      console.log("❌ User tidak ditemukan");
+      return res.status(401).json({
+        message: "Email atau password salah",
+      });
     }
+
+    console.log("✅ User ditemukan");
+    console.log("isActive :", user.isActive);
+
+    if (user.isActive === false) {
+      console.log("❌ User tidak aktif");
+      return res.status(401).json({
+        message: "Akun tidak aktif",
+      });
+    }
+
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ message: 'Email atau password salah' });
+
+    console.log("Password cocok :", valid);
+
+    if (!valid) {
+      return res.status(401).json({
+        message: "Email atau password salah",
+      });
+    }
 
     const token = signToken(user);
-    res.json({ user: await getUserWithProfile(user.id), token });
+
+    console.log("✅ Login berhasil");
+
+    return res.json({
+      user: await getUserWithProfile(user.id),
+      token,
+    });
+
   } catch (err) {
-    res.status(500).json({ message: 'Gagal login', error: err.message });
+    console.error("LOGIN ERROR:", err);
+
+    return res.status(500).json({
+      message: "Gagal login",
+      error: err.message,
+    });
   }
 };
 
